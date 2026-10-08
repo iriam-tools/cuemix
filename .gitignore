@@ -1,0 +1,13 @@
+node_modules/
+artifacts/
+.DS_Store
+*.cuemix
+*.wav
+*.mp3
+*.m4a
+*.ogg
+*.flac
+*.aac
+.env
+.env.*
+!.env.example

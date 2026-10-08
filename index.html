@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#49ccff">
+  <meta name="description" content="CueMixはジングル15枠、歌枠5曲、BGM3枠をまとめて操作できるPC向けの音声プレーヤーです。好きな音源を登録して使えます。">
+  <title>CueMix — キューミックス</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <header class="app-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">C<span>m</span></span><div><h1>Cue<span>Mix</span></h1><p>キューミックス</p></div></div>
+    <nav aria-label="メインメニュー"><button data-open="sources-dialog">音源を探す</button><button data-open="help-dialog">保存・使い方</button><button id="stop-all" class="stop-all"><span aria-hidden="true">■</span> すべて停止 <kbd>Space</kbd></button></nav>
+  </header>
+  <div id="storage-error" class="alert" role="alert" hidden></div>
+  <div class="intro"><p>好きな音を、好きなタイミングで。</p><label class="check"><input id="shortcuts" type="checkbox" checked>キー操作 <span class="desktop-note">1–5 / Q–T / A–G</span></label></div>
+  <main aria-busy="true" id="workspace">
+    <div class="main-grid">
+      <section class="panel effects-panel" aria-labelledby="effects-title">
+        <div class="section-heading"><div class="section-title"><span class="section-icon effect-icon" aria-hidden="true">♪</span><h2 id="effects-title">ジングル</h2><span class="count" id="effect-count">0 / 15</span></div><button id="stop-effects" class="quiet">■ 停止</button></div>
+        <div id="effects-grid" class="effects-grid"></div>
+        <div class="panel-bottom"><span class="hint">登録済みのパッドを押すと再生</span><label class="volume">音量 <input type="range" id="fx-volume" min="0" max="200" value="80"><output for="fx-volume">80%</output></label></div>
+      </section>
+      <section class="panel songs-panel" aria-labelledby="songs-title">
+        <div class="section-heading"><div class="section-title"><span class="section-icon song-icon" aria-hidden="true">♫</span><h2 id="songs-title">歌枠</h2><span class="count" id="song-count">0 / 5</span></div><span class="hint">選んでから再生</span></div>
+        <div id="songs-list" class="songs-list"></div>
+        <div class="song-player">
+          <div class="player-heading"><span class="status-tag" id="song-state">停止中</span><span id="song-current" class="current-name">曲を登録してください</span></div>
+          <label class="sr-only" for="song-seek">歌の再生位置</label><input id="song-seek" class="seek" type="range" min="0" max="1000" value="0" disabled>
+          <div class="time-row"><span id="song-elapsed">0:00</span><span id="song-remaining">残り −:−</span></div>
+          <div class="transport"><button id="song-start" aria-label="歌を頭出し" disabled>↤</button><button id="song-play" class="primary" disabled>▶ 再生</button><button id="song-pause" disabled>一時停止</button><button id="song-stop" aria-label="歌を停止" disabled>■</button></div>
+          <label class="volume song-volume">歌の音量 <input type="range" id="song-volume" min="0" max="200" value="80"><output for="song-volume">80%</output></label>
+        </div>
+      </section>
+    </div>
+    <section class="panel bgm-panel" aria-labelledby="bgm-title">
+      <div class="section-heading"><div class="section-title"><span class="section-icon bgm-icon" aria-hidden="true">≈</span><h2 id="bgm-title">BGM</h2><span class="count" id="bgm-count">0 / 3</span></div><span class="hint">選んで再生 · 同時に1曲</span></div>
+      <div id="bgm-slots" class="bgm-slots"></div>
+      <div class="bgm-bottom"><div class="bgm-transport"><span class="status-tag" id="bgm-state">停止中</span><button id="bgm-play" class="primary" disabled>▶ 再生</button><button id="bgm-pause" disabled>一時停止</button><button id="bgm-stop" disabled>フェード停止</button></div><div class="bgm-options"><label class="check"><input id="bgm-loop" type="checkbox" checked>1曲ループ</label><label class="volume">音量 <input type="range" id="bgm-volume" min="0" max="200" value="30"><output for="bgm-volume">30%</output></label></div></div>
+      <div class="bgm-foot"><label class="check"><input id="auto-duck" type="checkbox" checked>歌の再生時はBGMをフェード停止</label><span class="hint">BGMの再開は手動</span><span class="hint" id="bgm-current"></span></div>
+    </section>
+  </main>
+  <footer><span id="storage-status">音源を読み込んでいます…</span><span class="hint">音源内蔵なし · 端末内に保存</span></footer>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<dialog id="edit-dialog" aria-labelledby="edit-title">
+  <form id="edit-form"><div class="dialog-heading"><h2 id="edit-title">音源を登録</h2><button type="button" data-close aria-label="閉じる">×</button></div>
+  <p class="dialog-intro">自分で用意した音声ファイルを登録できます。</p>
+  <label class="file-drop" for="audio-file"><span class="file-plus" aria-hidden="true">＋</span><strong id="file-label">音声ファイルを選ぶ</strong><span id="file-details">MP3・WAV・M4Aなど · 1音80MBまで</span><input id="audio-file" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.webm"></label>
+  <label class="field-label" for="sound-name">表示名</label><input id="sound-name" type="text" maxlength="60" placeholder="例：拍手 / 雑談 / 1曲目" required autocomplete="off">
+  <label class="volume edit-volume">この音の音量 <input id="sound-volume" type="range" min="0" max="200" value="100"><output for="sound-volume">100%</output></label>
+  <p class="hint" id="edit-note"></p><p id="edit-error" class="inline-error" role="alert" hidden></p>
+  <div class="dialog-actions"><button id="delete-sound" type="button" class="danger" hidden>登録を解除</button><span class="spacer"></span><button type="button" data-close>キャンセル</button><button id="save-sound" class="primary" type="submit">保存する</button></div></form>
+</dialog>
+
+<dialog id="sources-dialog" aria-labelledby="sources-title"><div class="dialog-heading"><h2 id="sources-title">音源を探す</h2><button data-close aria-label="閉じる">×</button></div><p class="dialog-intro">素材サイトで音を保存してから、好きな枠に登録しよう。</p>
+<div class="source-list"><a href="https://soundeffect-lab.info/" target="_blank" rel="noopener noreferrer"><strong>効果音ラボ</strong><span>リアクション・演出用の効果音</span><small>利用規約で配信の用途を確認してください。素材の再配布は禁止されています。</small></a><a href="https://freesound.org/" target="_blank" rel="noopener noreferrer"><strong>Freesound</strong><span>効果音・環境音・楽器の音</span><small>音ごとに条件が異なります。クレジット表記や商用利用の条件を確認してください。</small></a><a href="https://opentracks.com/" target="_blank" rel="noopener noreferrer"><strong>OpenTracks（旧DOVA-SYNDROME）</strong><span>雰囲気に合わせて探せるBGM</span><small>サイトと作曲者の利用条件を確認してください。</small></a></div>
+<p class="hint">歌枠には、配信での利用が許可された伴奏・カラオケ音源を登録してください。購入済みの音源でも、配信に使えるとは限りません。</p></dialog>
+
+<dialog id="help-dialog" class="wide-dialog" aria-labelledby="help-title"><div class="dialog-heading"><h2 id="help-title">保存・使い方</h2><button data-close aria-label="閉じる">×</button></div>
+<section class="help-section"><h3>音源はこの端末のブラウザに保存</h3><p>音源はCueMixのサーバーへ送信しません。同じURL・同じブラウザで開くと登録した音が戻ります。別の端末への自動同期はありません。ブラウザのデータ削除や保存容量不足で失われる場合があるので、元の音源とバックアップを保管してください。</p><div class="help-actions"><button id="export-backup" class="primary">バックアップを書き出す</button><button id="import-backup">バックアップを読み込む</button><input type="file" id="backup-file" accept=".cuemix" hidden></div><p class="hint">バックアップには音源と設定が含まれます。本人の移行・復元用です。音源の配布条件に従って扱ってください。読み込むと現在の登録内容を置き換えます。</p><p id="backup-status" role="status"></p></section>
+<section class="help-section"><h3>配信中の操作</h3><ul><li>ジングル：パッドを押して再生。複数の音を重ねて鳴らせます。</li><li>歌枠・BGM：枠を選んで「再生」。選択しただけでは音は変わりません。</li><li>BGM：切り替え時は前の曲を短くフェード停止してから次の曲を開始します。</li><li>Space：すべて即停止。入力中や設定画面ではキー操作を無効にします。</li><li>各枠の「編集」：音源の差し替え、名前、個別音量を変更できます。</li><li>音量：各項目・個別音源とも0〜200%。100%が元の音量です。個別音量と項目の音量は掛け合わせます（両方200%で4倍）。大きなピークは出力段で抑えますが、音が歪む場合は音量を下げてください。</li></ul></section>
+<section class="help-section"><h3>配信に音を載せる</h3><p>まず小さな音量で再生し、配信ソフト側のメーターが動くか確認してください。OBSなどで、このブラウザの音声またはデスクトップ音声を取り込みます。設定方法はOS・配信ソフトによって異なります。マイクからも同じ音を拾う場合は、ヘッドホンを使うと二重再生を防ぎやすくなります。</p><p>PC向けの初版です。スマートフォンのバックグラウンド再生・操作にはまだ対応していません。ループの継ぎ目は元の音源の無音や形式によって変わります。</p></section>
+</dialog>
+</body>
+</html>

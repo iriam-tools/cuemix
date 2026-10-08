@@ -1,0 +1,9 @@
+{
+  "name": "cuemix",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "音源を持ち込んで使う、PC向けの配信サウンドプレーヤー",
+  "scripts": { "start": "node dev-server.mjs", "test": "node --test tests/model.test.mjs" },
+  "license": "MIT"
+}
